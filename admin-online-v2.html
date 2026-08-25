@@ -642,6 +642,34 @@ h1 span{color:var(--lime)}
 }
 
 
+.simpleAdminNameRow{display:flex;align-items:center;gap:7px}
+#simpleAdminBadge{
+ display:none;padding:2px 7px;border-radius:999px;
+ background:linear-gradient(135deg,#ffd84a,#ff9f1c);
+ color:#171000;font-size:8px;font-weight:1000;letter-spacing:.6px
+}
+#simpleAdminBadge.show{display:inline-flex}
+#simpleAdminRedeemBtn{
+ display:block;margin:5px 0 3px;padding:5px 9px;border-radius:8px;
+ border:1px solid rgba(255,215,70,.75);
+ background:linear-gradient(135deg,#ffd84a,#ff9f1c);
+ color:#171000;font-size:8px;font-weight:1000;letter-spacing:.4px;
+ cursor:pointer
+}
+#simpleAdminRedeemBtn.unlocked{
+ background:linear-gradient(135deg,#c6ff22,#67de46);
+}
+#admin360Btn{
+ display:none;
+ background:linear-gradient(135deg,#e850ff,#7827ef);
+}
+#admin360Btn.show{display:block}
+.adminSpecialChoice{
+ border-color:#ffd84a!important;
+ box-shadow:0 0 0 2px rgba(255,216,74,.18),0 0 22px rgba(255,190,35,.14)!important;
+}
+
+
 #onlineTeamPick{position:fixed;inset:0;z-index:72;display:none;overflow:auto;background:radial-gradient(circle at 18% 14%,rgba(113,255,59,.13),transparent 34%),radial-gradient(circle at 82% 18%,rgba(45,136,255,.13),transparent 32%),linear-gradient(180deg,#07130d,#092414 55%,#075426);color:#fff}
 .onlinePickShell{max-width:1320px;margin:0 auto;padding:28px 28px 45px}
 .onlinePickTop{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)}
@@ -689,7 +717,7 @@ h1 span{color:var(--lime)}
       <span id="specialPowerStatus">TOURNAMENT MODE</span>
     </div>
   </div>
-  <div id="hint"><b>→</b> Their Goal · <b>←</b> Your Goal · <b>↑</b> Left · <b>↓</b> Right · <b>HOLD P</b> Pass · <b>HOLD S</b> Shoot · <b>T</b> Tackle · <b>Z</b> Special Power</div>
+  <div id="hint"><span style="color:#ffd84a;font-weight:1000">ADMIN SIMPLE V1 • </span><b>→</b> Their Goal · <b>←</b> Your Goal · <b>↑</b> Left · <b>↓</b> Right · <b>HOLD P</b> Pass · <b>HOLD S</b> Shoot · <b>T</b> Tackle · <b>Z</b> Special Power</div>
 </div>
 
 <div class="actions">
@@ -699,6 +727,7 @@ h1 span{color:var(--lime)}
   <button class="action" id="tackleBtn">TACKLE</button>
   <button class="action" id="goalieBtn">GOALIE</button>
   <button class="action" id="powerBtn">POWER Z</button>
+  <button class="action" id="admin360Btn">X • 360 SHOT</button>
   <button class="action" id="sprintBtn">SPRINT</button>
 </div>
 
@@ -970,7 +999,11 @@ h1 span{color:var(--lime)}
         <div class="profileAvatar" id="profileMainAvatar">👤</div>
         <div>
           <small>PLAYER PROFILE</small>
-          <b id="profileMainName">GUEST</b>
+          <div class="simpleAdminNameRow">
+            <b id="profileMainName">GUEST</b>
+            <span id="simpleAdminBadge">ADMIN</span>
+          </div>
+          <button id="simpleAdminRedeemBtn" type="button">👑 REDEEM ADMIN CODE</button>
           <span id="profileDailyMini">Sign in for daily rewards</span>
         </div>
       </div>
@@ -1237,7 +1270,11 @@ const TEAMS=[
  {id:"nga",name:"Nigeria",flag:"🇳🇬",rating:84,power:"allround",powerName:"COUNTER RUSH",icon:"🚀",desc:"Speed, tackling and shooting all get stronger for 9 seconds.",duration:9},
  {id:"cro",name:"Croatia",flag:"🇭🇷",rating:86,power:"vision",powerName:"MIDFIELD CONTROL",icon:"🎛️",desc:"Passes become extremely accurate and difficult to intercept for 10 seconds.",duration:10},
  {id:"mex",name:"Mexico",flag:"🇲🇽",rating:84,power:"shield",powerName:"FLAIR SHIELD",icon:"🛡️",desc:"Opponent AI cannot tackle your controlled player for 7 seconds.",duration:7},
- {id:"sen",name:"Senegal",flag:"🇸🇳",rating:84,power:"tackle",powerName:"POWER DEFENCE",icon:"💪",desc:"Front tackles become much stronger for 9 seconds.",duration:9}
+ {id:"sen",name:"Senegal",flag:"🇸🇳",rating:84,power:"tackle",powerName:"POWER DEFENCE",icon:"💪",desc:"Front tackles become much stronger for 9 seconds.",duration:9},
+ {id:"special",name:"SPECIAL TEAM",flag:"⭐",rating:99,power:"admin",
+  powerName:"ADMIN CONTROLS",icon:"👑",
+  desc:"ADMIN ONLY: press Z to edit the score. Press X with the ball for a guaranteed 360-degree goal shot.",
+  duration:0}
 ];
 const TEAM_BY_ID=Object.fromEntries(TEAMS.map(t=>[t.id,t]));
 
@@ -1433,6 +1470,50 @@ function profileNameAlreadyUsed(name){
  if(!key)return false;
  return !!profileStore[key];
 }
+
+const SIMPLE_ADMIN_CODE="3214518737138721352147735!@!@$";
+
+function hasSimpleAdmin(){
+ const p=currentProfile();
+ return !!(p && p.adminUnlocked===true);
+}
+
+function refreshSimpleAdminUI(){
+ const p=currentProfile();
+ const admin=hasSimpleAdmin();
+ const badge=document.getElementById("simpleAdminBadge");
+ const btn=document.getElementById("simpleAdminRedeemBtn");
+ if(badge)badge.classList.toggle("show",admin);
+ if(btn){
+   btn.classList.toggle("unlocked",admin);
+   btn.textContent=admin ? "👑 ADMIN ACTIVE" : "👑 REDEEM ADMIN CODE";
+ }
+}
+
+function redeemSimpleAdmin(){
+ const p=currentProfile();
+ if(!p){
+   alert("Sign in first, then press REDEEM ADMIN CODE again.");
+   try{openProfileCenter()}catch(e){}
+   return;
+ }
+
+ const entered=prompt("ENTER ADMIN CODE");
+ if(entered===null)return;
+
+ if(String(entered).trim()!==SIMPLE_ADMIN_CODE){
+   alert("❌ INVALID ADMIN CODE");
+   return;
+ }
+
+ p.adminUnlocked=true;
+ p.adminUnlockedAt=Date.now();
+ saveProfileStore();
+ refreshSimpleAdminUI();
+ renderTeamChoices();
+ alert("👑 ADMIN UNLOCKED PERMANENTLY ON THIS PROFILE!");
+}
+
 function hashGamePin(pin){
  // Light local-game obfuscation only; this is NOT real account security.
  let h=2166136261;
@@ -1485,6 +1566,7 @@ function updateMainProfileBar(){
    profileMainAvatarEl.textContent="👤";
    profileDailyMiniEl.textContent="Sign in for daily rewards";
    onlineModeHintEl.textContent="🔒 Sign in to play online";
+   refreshSimpleAdminUI();
    return;
  }
  const info=nextDailyRewardInfo(p);
@@ -1493,6 +1575,7 @@ function updateMainProfileBar(){
  profileMainAvatarEl.textContent=SKIN_BY_ID[validSkinId(p.equippedSkin)].icon;
  profileDailyMiniEl.textContent=info.claimedToday?`Daily claimed • ${p.streak||1} day streak`:`🎁 Daily reward ready: ${info.reward} coins`;
  onlineModeHintEl.textContent=`✅ Signed in as ${p.displayName}`;
+ refreshSimpleAdminUI();
  if(!playing)onlineNameEl.value=p.displayName;
 }
 function renderSkinShop(){
@@ -1673,7 +1756,7 @@ function getVisualSkin(team){
 const ONLINE_REMOTE_SPECIAL_INFO={name:"SPECIAL TEAM",flag:"⭐",icon:"👑",powerName:"ADMIN CONTROLS"};
 
 function localCanUseOnlineSpecial(){
- return false;
+ return hasSimpleAdmin();
 }
 function onlineTeamInfo(id){
  return TEAM_BY_ID[id] || (id==="special" ? ONLINE_REMOTE_SPECIAL_INFO : TEAM_BY_ID.rsa);
@@ -1772,11 +1855,13 @@ function maybeStartOnlineAfterPick(force=false){
 function renderOnlineTeamOptions(){
  onlineTeamSelectEl.innerHTML="";
  for(const t of TEAMS){
+   if(t.id==="special")continue;
    const o=document.createElement("option");
    o.value=t.id;
    o.textContent=`${t.flag} ${t.name}`;
    onlineTeamSelectEl.appendChild(o);
  }
+ if(onlineLocalTeam==="special")onlineLocalTeam="rsa";
  onlineTeamSelectEl.value=onlineLocalTeam;
 }
 function validTeamId(id){return TEAM_BY_ID[id]?id:"rsa"}
@@ -2624,10 +2709,22 @@ function updatePowerHud(){
    specialPowerStatusEl.textContent="TOURNAMENT MODE";
    powerBtnEl.textContent="POWER Z";
    powerBtnEl.classList.remove("powerActive","powerCooling");
+   document.getElementById("admin360Btn")?.classList.remove("show");
    return;
  }
  const t=currentUserTeam(); if(!t)return;
  const now=performance.now();
+
+ if(t.power==="admin"){
+   specialPowerNameEl.textContent="👑 ADMIN CONTROLS";
+   specialPowerStatusEl.textContent="Z = EDIT SCORE • X = GUARANTEED 360 SHOT";
+   powerBtnEl.textContent="Z • EDIT SCORE";
+   powerBtnEl.classList.remove("powerActive","powerCooling");
+   document.getElementById("admin360Btn")?.classList.add("show");
+   return;
+ }else{
+   document.getElementById("admin360Btn")?.classList.remove("show");
+ }
  specialPowerNameEl.textContent=t.power==="powerShot"
    ? `${t.icon} ${t.powerName} • ${thunderShotsLeft}/${THUNDER_SHOT_MAX_USES} LEFT`
    : `${t.icon} ${t.powerName}`;
@@ -2725,9 +2822,98 @@ function updateThunderShot(now){
  return true;
 }
 
+
+let admin360Pending=false;
+let admin360StartedAt=0;
+let admin360Owner=null;
+const ADMIN_360_MS=720;
+
+function isAdminSpecialTeam(){
+ return gameMode==="tournament"
+   && selectedTournamentTeam==="special"
+   && hasSimpleAdmin();
+}
+
+function adminEditScore(){
+ if(!isAdminSpecialTeam()||!playing||paused||halftimeActive||fulltime)return;
+
+ const entered=prompt(
+   "👑 SET SCORE\nType YOUR SCORE - OPPONENT SCORE\nExample: 5-2",
+   `${blueScore}-${redScore}`
+ );
+ if(entered===null)return;
+
+ const m=String(entered).trim().match(/^(\d{1,3})\s*[-:]\s*(\d{1,3})$/);
+ if(!m){
+   alert("Use a score like 5-2");
+   return;
+ }
+
+ blueScore=Math.min(999,Number(m[1]));
+ redScore=Math.min(999,Number(m[2]));
+ bsEl.textContent=String(blueScore);
+ rsEl.textContent=String(redScore);
+ toast(`👑 SCORE SET • ${blueScore}-${redScore}`);
+}
+
+function startAdmin360Shot(){
+ if(!isAdminSpecialTeam()||!playing||paused||halftimeActive||fulltime||goalLock)return;
+
+ const owner=(ball.owner&&ball.owner.team==="blue") ? ball.owner : null;
+ if(!owner){
+   toast("WIN THE BALL FIRST!");
+   return;
+ }
+
+ selected=blue.indexOf(owner);
+ admin360Pending=true;
+ admin360StartedAt=performance.now();
+ admin360Owner=owner;
+
+ ball.owner=null;
+ ball.vx=ball.vz=ball.vy=0;
+ ball.unstoppable=true;
+ ball.claimDelay=99;
+ ball.assistTarget=null;
+ ball.assistTime=0;
+ ball.lastTouch="blue";
+
+ toast("🌀 360 SHOT • 1000000000000000000000000% ACCURACY");
+}
+
+function updateAdmin360Shot(now){
+ if(!admin360Pending||!admin360Owner)return false;
+
+ const t=clamp((now-admin360StartedAt)/ADMIN_360_MS,0,1);
+ const angle=t*Math.PI*2;
+
+ // Visible 360 move: the ball circles the player before the guaranteed finish.
+ ball.x=admin360Owner.x+Math.cos(angle)*1.45;
+ ball.z=admin360Owner.z+Math.sin(angle)*1.45;
+ ball.y=.65+Math.sin(t*Math.PI)*.9;
+
+ admin360Owner.fx=Math.cos(angle);
+ admin360Owner.fz=Math.sin(angle);
+
+ if(t>=1){
+   admin360Pending=false;
+   admin360Owner=null;
+   ball.unstoppable=false;
+
+   // Guaranteed goal — no keeper/save/accuracy calculation.
+   scoreGoal("blue");
+ }
+ return true;
+}
+
 function activatePower(){
  if(gameMode!=="tournament"){toast("POWERS ARE ONLY IN TOURNAMENT MODE");return}
  if(!playing||paused||halftimeActive||fulltime||goalLock)return;
+
+ if(isAdminSpecialTeam()){
+   adminEditScore();
+   return;
+ }
 
  const now=performance.now();
  if(now<powerActiveUntil){toast("POWER IS ALREADY ACTIVE");return}
@@ -2763,10 +2949,17 @@ function activatePower(){
 
 function renderTeamChoices(){
  teamGridEl.innerHTML="";
+
+ if(selectedTournamentTeam==="special"&&!hasSimpleAdmin()){
+   selectedTournamentTeam="rsa";
+ }
+
  for(const t of TEAMS){
+   if(t.id==="special"&&!hasSimpleAdmin())continue;
+
    const b=document.createElement("button");
    b.type="button";
-   b.className="teamChoice"+(t.id===selectedTournamentTeam?" selected":"");
+   b.className="teamChoice"+(t.id===selectedTournamentTeam?" selected":"")+(t.id==="special"?" adminSpecialChoice":"");
    b.innerHTML=`<span class="flag">${t.flag}</span><b>${t.name}</b><small>${t.icon} ${t.powerName}</small>`;
    b.addEventListener("click",()=>{
      selectedTournamentTeam=t.id;
@@ -2797,7 +2990,7 @@ function simulateTeamWinner(a,b){
 }
 function createTournamentBracket(){
  const chosen=selectedTournamentTeam;
- const others=shuffle(TEAMS.map(t=>t.id).filter(id=>id!==chosen));
+ const others=shuffle(TEAMS.map(t=>t.id).filter(id=>id!==chosen&&id!=="special"));
  const slot=Math.floor(Math.random()*16);
  const seeded=[];let oi=0;
  for(let i=0;i<16;i++)seeded.push(i===slot?chosen:others[oi++]);
@@ -2956,6 +3149,7 @@ function returnToMainMenu(){
 
 
 
+document.getElementById("simpleAdminRedeemBtn").addEventListener("click",redeemSimpleAdmin);
 document.getElementById("openProfile").addEventListener("click",openProfileCenter);
 document.getElementById("closeProfile").addEventListener("click",closeProfileCenter);
 document.getElementById("profileCreateBtn").addEventListener("click",createLocalProfile);
@@ -3013,6 +3207,7 @@ renderTeamChoices();
 renderSelectedTeam();
 renderOnlineTeamOptions();
 updateMainProfileBar();
+refreshSimpleAdminUI();
 if(location.hash==="#tournament"){
  setTimeout(()=>openTournament(),0);
 }
@@ -3848,6 +4043,10 @@ function update(dt){
    return;
  }
 
+ if(updateAdmin360Shot(performance.now())){
+   return;
+ }
+
  updateControlled(dt);
  if(gameMode==="online"&&onlineRole==="host")updateOnlineRemoteControlled(dt);
  updateAI(dt);resolvePlayers(dt);
@@ -4232,6 +4431,10 @@ addEventListener("keydown",e=>{
 
  if(e.code==="KeyO"&&!e.repeat)switchPlayer();
  if(e.code==="KeyT"&&!e.repeat)doTackle(blue[selected]);
+ if(e.code==="KeyX"&&!e.repeat&&isAdminSpecialTeam()){
+   e.preventDefault();
+   startAdmin360Shot();
+ }
  if(e.code==="KeyZ"&&!e.repeat)activatePower();
  if(e.code==="KeyG"&&!e.repeat){
    const gk=blue.find(p=>p.role==="GK");
@@ -4265,6 +4468,9 @@ powerBtnEl.addEventListener("pointerdown",pressAction(()=>{
  if(gameMode==="online")toast("SPECIAL POWERS ARE OFF IN ONLINE MODE");
  else activatePower();
 }));
+document.getElementById("admin360Btn").addEventListener("pointerdown",pressAction(()=>{
+ startAdmin360Shot();
+}));
 document.getElementById("goalieBtn").addEventListener("pointerdown",pressAction(()=>{
  if(gameMode==="online"&&onlineRole==="guest"){
    onlineGuestAction("goalie");
@@ -4290,6 +4496,7 @@ function startGameCore(){
  powerUsed=false;powerActiveUntil=0;powerCooldownUntil=0;
  thunderShotsLeft=THUNDER_SHOT_MAX_USES;
  thunderShotPending=false;
+ admin360Pending=false;admin360Owner=null;
  finalFireworks.length=0;finalFireworkBursts.length=0;
  postMatchAction=gameMode==="quick"?"restart":"bracket";
  startEl.style.display="none";leaveBtnEl.style.display="block";fulltimeEl.style.display="none";halftimeEl.style.display="none";
